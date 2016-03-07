@@ -15,6 +15,7 @@
 #include <iostream>
 #include <chrono>
 #include <cmath>
+#include <vector>
 
 GLuint createShader(std::string filename, GLenum shaderType)
 {
@@ -45,6 +46,171 @@ GLuint createShader(std::string filename, GLenum shaderType)
     return shader;
 }
 
+struct Mesh
+{
+    std::vector<float> vertexData;
+    std::vector<unsigned int> elements;
+};
+
+Mesh buildSphereMesh(int M, int N, int V)
+{
+    std::vector<float> vertexData;
+    std::vector<unsigned int> elements;
+
+
+    vertexData.reserve((V + 1) * N * 6);
+
+    for(int m = 0; m <= V; ++m)
+    {
+        for(int n = 0; n < N; ++n)
+        {
+            glm::vec3 vertex(
+                sin(M_PI * (m / (float)M)) * cos(2.0f * M_PI * (n / (float)N)),
+                sin(M_PI * (m / (float)M)) * sin(2.0f * M_PI * (n / (float)N)),
+                cos(M_PI * (m / (float)M))
+            );
+
+            glm::vec3 normal = glm::normalize(vertex);
+
+            vertexData.push_back(vertex.x);
+            vertexData.push_back(vertex.y);
+            vertexData.push_back(vertex.z);
+            vertexData.push_back(normal.x);
+            vertexData.push_back(normal.y);
+            vertexData.push_back(normal.z);
+        }
+    }
+
+    for(int i = 0; i < (V + 1) * N - N; ++i)
+    {
+        if((i + 1) % N)
+        {
+            elements.push_back(i);
+            elements.push_back(i + N);
+            elements.push_back(i + 1);
+            elements.push_back(i + 1);
+            elements.push_back(i + N);
+            elements.push_back(i + 1 + N);
+        }
+        else
+        {
+            elements.push_back(i);
+            elements.push_back(i + N);
+            elements.push_back(i - (N - 1));
+            elements.push_back(i - (N - 1));
+            elements.push_back(i + N);
+            elements.push_back(i + 1);
+        }
+    }
+
+    float innerScale = 0.96f;
+
+    for(int m = 0; m <= V; ++m)
+    {
+        for(int n = 0; n < N; ++n)
+        {
+            glm::vec3 vertex(
+                sin(M_PI * (m / (float)M)) * cos(2.0f * M_PI * (n / (float)N)),
+                sin(M_PI * (m / (float)M)) * sin(2.0f * M_PI * (n / (float)N)),
+                cos(M_PI * (m / (float)M))
+            );
+
+            glm::vec3 normal = -1.0f * glm::normalize(vertex);
+
+            vertexData.push_back(innerScale * vertex.x);
+            vertexData.push_back(innerScale * vertex.y);
+            vertexData.push_back(innerScale * vertex.z);
+            vertexData.push_back(normal.x);
+            vertexData.push_back(normal.y);
+            vertexData.push_back(normal.z);
+        }
+    }
+
+    for(int i = (V + 1) * N; i < 2 * ((V + 1) * N) - N; ++i)
+    {
+        if((i + 1) % N)
+        {
+            elements.push_back(i);
+            elements.push_back(i + 1);
+            elements.push_back(i + N);
+            elements.push_back(i + 1);
+            elements.push_back(i + 1 + N);
+            elements.push_back(i + N);
+        }
+        else
+        {
+            elements.push_back(i);
+            elements.push_back(i - (N - 1));
+            elements.push_back(i + N);
+            elements.push_back(i + N);
+            elements.push_back(i - (N - 1));
+            elements.push_back(i + 1);
+        }
+    }
+
+    for(int i = 0; i < N; ++i)
+    {
+        // elements.push_back((V + 1) * N - 1 - i);
+        // elements.push_back((V + 1) * N - 2 - i);
+        // elements.push_back(2 * ((V + 1) * N) - 1 - i);
+        // elements.push_back((V + 1) * N - 2 - i);
+        // elements.push_back(2 * ((V + 1) * N) - 1 - i);
+        // elements.push_back(2 * ((V + 1) * N) - 2 - i);
+
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - i)]);
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - i) + 1]);
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - i) + 2]);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(-1.0f);
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - ((i + 1) % N))]);
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - ((i + 1) % N)) + 1]);
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - ((i + 1) % N)) + 2]);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(-1.0f);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - i)]);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - i) + 1]);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - i) + 2]);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(-1.0f);
+
+        elements.push_back(vertexData.size() / 6 - 3);
+        elements.push_back(vertexData.size() / 6 - 2);
+        elements.push_back(vertexData.size() / 6 - 1);
+
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - ((i + 1) % N))]);
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - ((i + 1) % N)) + 1]);
+        vertexData.push_back(vertexData[6 * ((V + 1) * N - 1 - ((i + 1) % N)) + 2]);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(-1.0f);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - ((i + 1) % N))]);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - ((i + 1) % N)) + 1]);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - ((i + 1) % N)) + 2]);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(-1.0f);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - i)]);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - i) + 1]);
+        vertexData.push_back(vertexData[6 * (2 * ((V + 1) * N) - 1 - i) + 2]);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(0.0f);
+        vertexData.push_back(-1.0f);
+
+        elements.push_back(vertexData.size() / 6 - 3);
+        elements.push_back(vertexData.size() / 6 - 2);
+        elements.push_back(vertexData.size() / 6 - 1);
+    }
+
+    Mesh mesh;
+
+    mesh.vertexData = vertexData;
+    mesh.elements = elements;
+
+    return mesh;
+}
 
 int main(int argc, char* argv[])
 {
@@ -92,24 +258,29 @@ int main(int argc, char* argv[])
          1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
     };
 
+    // GLuint elements[] = {
+    //     0, 1, 2,
+    //     2, 3, 0,
+    //
+    //     4, 5, 6,
+    //     6, 7, 4,
+    //
+    //     8, 9, 10,
+    //     10, 11, 8,
+    //
+    //     12, 13, 14,
+    //     14, 15, 12,
+    //
+    //     16, 17, 18,
+    //     18, 19, 16,
+    //
+    //     20, 21, 22,
+    //     22, 23, 20,
+    // };
+
     GLuint elements[] = {
-        0, 1, 2,
-        2, 3, 0,
-
-        4, 5, 6,
-        6, 7, 4,
-
-        8, 9, 10,
-        10, 11, 8,
-
-        12, 13, 14,
-        14, 15, 12,
-
-        16, 17, 18,
-        18, 19, 16,
-
-        20, 21, 22,
-        22, 23, 20,
+        8, 9, 8 + 8,
+        9, 8 + 8, 9 + 8,
     };
 
     GLuint vertexShader = createShader("shader.vert", GL_VERTEX_SHADER);
@@ -132,11 +303,21 @@ int main(int argc, char* argv[])
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
+    Mesh sphere = buildSphereMesh(32, 64, 16);
+
+    std::cout << sphere.vertexData.size() / 6 << std::endl;
+
+    for(int i = 0; i < sphere.vertexData.size(); i += 6)
+    {
+        std::cout << i / 6 << ": " << sphere.vertexData[i] << ", " << sphere.vertexData[i + 1] << ", " << sphere.vertexData[i + 2] << ", " << std::endl;
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sphere.vertexData.size(), sphere.vertexData.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * sphere.elements.size(), sphere.elements.data(), GL_STATIC_DRAW);
 
     GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
     glEnableVertexAttribArray(posAttrib);
@@ -171,6 +352,7 @@ int main(int argc, char* argv[])
 
     GLint stepLocation = glGetUniformLocation(shaderProgram, "timeStep");
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     auto startTime = std::chrono::high_resolution_clock::now();
     SDL_Event windowEvent;
@@ -191,11 +373,14 @@ int main(int argc, char* argv[])
 
         glUniform1f(stepLocation, step);
         model = glm::rotate(glm::mat4(), step * glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(glm::mat4(), step * glm::radians(90.0f) - 180.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
         glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
         glClearColor(0.0, 0.0, 1.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, sphere.elements.size(), GL_UNSIGNED_INT, 0);
+        // glDrawArrays(GL_LINE_STRIP, 0, sphere.vertexData.size() / 6);
         SDL_GL_SwapWindow(window);
     }
 
